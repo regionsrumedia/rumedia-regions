@@ -104,67 +104,139 @@
       display: none;
     }
   
-    #install-banner {
+    #install-card {
       position: fixed;
       left: 50%;
-      bottom: max(18px, env(safe-area-inset-bottom));
+      bottom: max(12px, env(safe-area-inset-bottom));
       transform: translateX(-50%);
       z-index: 30;
-      width: min(92vw, 430px);
+      width: min(calc(100vw - 24px), 440px);
       box-sizing: border-box;
       display: none;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 1px solid rgba(0,0,0,.10);
-      border-radius: 16px;
-      background: rgba(255,255,255,.97);
-      box-shadow: 0 10px 30px rgba(0,0,0,.16);
-      font: 600 14px/1.3 Arial, Helvetica, sans-serif;
-      color: #222;
+      padding: 18px;
+      border: 1px solid rgba(0,0,0,.09);
+      border-radius: 20px;
+      background: rgba(255,255,255,.98);
+      box-shadow: 0 12px 36px rgba(0,0,0,.18);
+      color: #17191c;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
-    #install-banner.show {
-      display: flex;
-    }
-
-    #install-copy {
-      flex: 1;
-      min-width: 0;
-    }
-
-    #install-hint {
-      display: none;
-      margin-top: 4px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #666;
-    }
-
-    #install-button {
-      flex: 0 0 auto;
-      border: 0;
-      border-radius: 11px;
-      padding: 11px 14px;
-      background: #f58220;
-      color: #fff;
-      font: 700 14px/1 Arial, Helvetica, sans-serif;
-      cursor: pointer;
+    #install-card.show {
+      display: block;
     }
 
     #install-close {
-      flex: 0 0 auto;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
       border: 0;
+      border-radius: 50%;
       background: transparent;
-      color: #777;
-      font-size: 22px;
-      line-height: 1;
-      padding: 4px;
+      color: #73777c;
+      font: 400 26px/36px Arial, Helvetica, sans-serif;
+      text-align: center;
       cursor: pointer;
     }
 
+    #install-title {
+      margin: 0 38px 6px 0;
+      font-size: 18px;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+
+    #install-text {
+      margin: 0;
+      color: #60656b;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 400;
+    }
+
+    #install-actions {
+      margin-top: 14px;
+    }
+
+    #install-button {
+      width: 100%;
+      min-height: 48px;
+      box-sizing: border-box;
+      border: 0;
+      border-radius: 13px;
+      padding: 13px 16px;
+      background: #f58220;
+      color: #fff;
+      font: 700 15px/1.2 Arial, Helvetica, sans-serif;
+      cursor: pointer;
+    }
+
+    #install-button[hidden] {
+      display: none;
+    }
+
+    #install-button:disabled {
+      opacity: .72;
+      cursor: default;
+    }
+
+    #install-spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      vertical-align: -3px;
+      border: 2px solid rgba(255,255,255,.45);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: install-spin .8s linear infinite;
+    }
+
+    #install-button.busy #install-spinner {
+      display: inline-block;
+    }
+
+    @keyframes install-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #install-success {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(18px);
+      z-index: 31;
+      width: min(calc(100vw - 24px), 440px);
+      box-sizing: border-box;
+      display: none;
+      padding: 15px 18px;
+      border-radius: 16px;
+      background: #17191c;
+      color: #fff;
+      box-shadow: 0 12px 36px rgba(0,0,0,.20);
+      font: 600 14px/1.4 Arial, Helvetica, sans-serif;
+      opacity: 0;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    #install-success.show {
+      display: block;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     @media (display-mode: standalone) {
-      #install-banner {
+      #install-card,
+      #install-success {
+        display: none !important;
+      }
+    }
+
+    @media (min-width: 800px) and (pointer: fine) {
+      #install-card,
+      #install-success {
         display: none !important;
       }
     }
@@ -194,13 +266,20 @@
   </div>
 
 
-  <div id="install-banner" role="region" aria-label="Установка приложения">
-    <div id="install-copy">
-      <div>«Регионы Румедиа» можно установить на телефон</div>
-      <div id="install-hint"></div>
-    </div>
-    <button id="install-button" type="button">Установить приложение</button>
+  <div id="install-card" role="dialog" aria-live="polite" aria-label="Установка приложения">
     <button id="install-close" type="button" aria-label="Закрыть">×</button>
+    <h2 id="install-title">Установить «Регионы Румедиа»</h2>
+    <p id="install-text">Приложение появится на экране приложений телефона.</p>
+    <div id="install-actions">
+      <button id="install-button" type="button">
+        <span id="install-spinner" aria-hidden="true"></span>
+        <span id="install-button-text">Установить приложение</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="install-success" role="status" aria-live="polite">
+    Приложение установлено. Ищите значок «Регионы Румедиа» на экране приложений.
   </div>
 
   <iframe
@@ -216,59 +295,204 @@
     const loader = document.getElementById('loader');
     const bar = document.getElementById('progress-bar');
     const label = document.getElementById('progress-label');
-    const installBanner = document.getElementById('install-banner');
+    const installCard = document.getElementById('install-card');
     const installButton = document.getElementById('install-button');
+    const installButtonText = document.getElementById('install-button-text');
     const installClose = document.getElementById('install-close');
-    const installHint = document.getElementById('install-hint');
+    const installTitle = document.getElementById('install-title');
+    const installText = document.getElementById('install-text');
+    const installSuccess = document.getElementById('install-success');
 
     let deferredInstallPrompt = null;
+    let appVisible = false;
+    let installDismissedForThisView = false;
+    let installFallbackTimer = null;
+    let installationAccepted = false;
+    let installedRelatedAppDetected = false;
 
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isSamsungInternet = /SamsungBrowser\//i.test(ua);
     const isMobileDevice =
       (navigator.userAgentData && navigator.userAgentData.mobile === true) ||
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      isAndroid || isIOS;
 
     function isStandalone() {
       return window.matchMedia('(display-mode: standalone)').matches ||
              window.navigator.standalone === true;
     }
 
-    function hideInstallBanner() {
-      installBanner.classList.remove('show');
+    function hideInstallCard() {
+      installCard.classList.remove('show');
+    }
+
+    function resetInstallButton() {
+      installButton.disabled = false;
+      installButton.hidden = false;
+      installButton.classList.remove('busy');
+      installButtonText.textContent = 'Установить приложение';
+    }
+
+    function showDirectInstallCard() {
+      if (!appVisible || !isMobileDevice || isStandalone() ||
+          installedRelatedAppDetected || installDismissedForThisView) return;
+
+      installTitle.textContent = 'Установить «Регионы Румедиа»';
+      installText.textContent =
+        'Приложение появится на экране приложений телефона.';
+      resetInstallButton();
+      installCard.classList.add('show');
+    }
+
+    function manualInstallText() {
+      if (isIOS) {
+        return 'Нажмите «Поделиться» и выберите «На экран Домой».';
+      }
+
+      if (isSamsungInternet) {
+        return 'Нажмите значок установки вверху. Если его нет, откройте меню браузера и выберите добавление на экран приложений.';
+      }
+
+      if (isAndroid) {
+        return 'Откройте меню ⋮ и выберите «Установить приложение». Если видите «Открыть в Chrome», сначала выберите его.';
+      }
+
+      return 'Откройте эту ссылку в Chrome или Samsung Internet и выберите установку приложения в меню браузера.';
+    }
+
+    function showManualInstallCard(prefix = '') {
+      if (!appVisible || !isMobileDevice || isStandalone() ||
+          installedRelatedAppDetected || installDismissedForThisView) return;
+
+      installTitle.textContent = 'Установить «Регионы Румедиа»';
+      installText.textContent = prefix ? prefix + ' ' + manualInstallText() : manualInstallText();
+      installButton.hidden = true;
+      installButton.disabled = false;
+      installButton.classList.remove('busy');
+      installCard.classList.add('show');
+    }
+
+    async function detectInstalledPwa() {
+      if (!isMobileDevice || isStandalone() ||
+          typeof navigator.getInstalledRelatedApps !== 'function') return;
+
+      try {
+        const apps = await navigator.getInstalledRelatedApps();
+        if (apps.some(app => app.platform === 'webapp')) {
+          installedRelatedAppDetected = true;
+          deferredInstallPrompt = null;
+          hideInstallCard();
+        }
+      } catch (_) {
+        // API поддерживается не везде; отсутствие результата не считаем ошибкой.
+      }
+    }
+
+    async function scheduleInstallUi() {
+      if (!appVisible || !isMobileDevice || isStandalone() || installDismissedForThisView) return;
+
+      await detectInstalledPwa();
+      if (installedRelatedAppDetected || isStandalone() || installDismissedForThisView) return;
+
+      if (deferredInstallPrompt) {
+        showDirectInstallCard();
+        return;
+      }
+
+      clearTimeout(installFallbackTimer);
+      installFallbackTimer = setTimeout(() => {
+        if (deferredInstallPrompt) {
+          showDirectInstallCard();
+        } else {
+          showManualInstallCard();
+        }
+      }, 1400);
     }
 
     window.addEventListener('beforeinstallprompt', event => {
+      // По возможности подавляем автоматическую браузерную промо-плашку,
+      // чтобы на ПК не появлялся наш собственный сценарий установки.
+      event.preventDefault();
+
       if (!isMobileDevice || isStandalone()) return;
 
-      event.preventDefault();
       deferredInstallPrompt = event;
-      installHint.style.display = 'none';
-      installButton.textContent = 'Установить приложение';
-      installBanner.classList.add('show');
-    });
-
-    window.addEventListener('appinstalled', () => {
-      deferredInstallPrompt = null;
-      hideInstallBanner();
+      if (appVisible && !installationAccepted) {
+        clearTimeout(installFallbackTimer);
+        showDirectInstallCard();
+      }
     });
 
     installButton.addEventListener('click', async () => {
-      if (!deferredInstallPrompt) return;
+      if (!deferredInstallPrompt || installButton.disabled) return;
 
       const promptEvent = deferredInstallPrompt;
       deferredInstallPrompt = null;
 
-      promptEvent.prompt();
+      installButton.disabled = true;
+      installButton.classList.add('busy');
+      installButtonText.textContent = 'Открываю установку…';
+      installText.textContent = 'Подтвердите установку в системном окне.';
 
+      let result = null;
       try {
-        await promptEvent.userChoice;
-      } catch (_) {}
+        result = await promptEvent.prompt();
+        if ((!result || !result.outcome) && promptEvent.userChoice) {
+          result = await promptEvent.userChoice;
+        }
+      } catch (_) {
+        showManualInstallCard('Системное окно не открылось.');
+        return;
+      }
 
-      hideInstallBanner();
+      if (result && result.outcome === 'accepted') {
+        installationAccepted = true;
+        installTitle.textContent = 'Установка началась';
+        installText.textContent =
+          'Android может показать ход установки в уведомлениях. После завершения ищите значок приложения на экране приложений.';
+        installButton.hidden = true;
+        installButton.disabled = false;
+        installButton.classList.remove('busy');
+
+        // Если appinstalled задержится, не выдаём ложное «готово».
+        setTimeout(() => {
+          if (installationAccepted && !installedRelatedAppDetected) {
+            installText.textContent =
+              'Установка запущена. Если системное окно уже закрылось, проверьте экран приложений телефона.';
+          }
+        }, 10000);
+      } else {
+        installationAccepted = false;
+        showManualInstallCard('Установка отменена.');
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installationAccepted = false;
+      installedRelatedAppDetected = true;
+      deferredInstallPrompt = null;
+      clearTimeout(installFallbackTimer);
+      hideInstallCard();
+
+      if (!isMobileDevice || isStandalone()) return;
+
+      installSuccess.classList.add('show');
+      setTimeout(() => {
+        installSuccess.classList.remove('show');
+        setTimeout(() => {
+          installSuccess.style.display = 'none';
+        }, 220);
+      }, 5500);
     });
 
     installClose.addEventListener('click', () => {
-      hideInstallBanner();
+      installDismissedForThisView = true;
+      clearTimeout(installFallbackTimer);
+      hideInstallCard();
     });
+
+    detectInstalledPwa();
 
     let frameLoaded = false;
     let revealStarted = false;
@@ -344,6 +568,8 @@
 
             setTimeout(() => {
               loader.style.display = 'none';
+              appVisible = true;
+              scheduleInstallUi();
             }, 350);
           }, 300);
         });
