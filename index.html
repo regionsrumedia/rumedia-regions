@@ -174,8 +174,6 @@
       if (finished) return;
       finished = true;
 
-      clearInterval(progressTimer);
-
       /*
         iframe Google Apps Script может прислать load раньше,
         чем интерфейс реально появился на экране.
@@ -187,6 +185,7 @@
       const waitMore = Math.max(0, minSplashMs - elapsed);
 
       setTimeout(() => {
+        clearInterval(progressTimer);
         setProgress(100);
 
         setTimeout(() => {
