@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="application-name" content="Регионы Румедиа">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Регионы Румедиа">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <title>Регионы Румедиа</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #f4f5f6;
+      color: #17191c;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(440px, 100%);
+      background: #fff;
+      border: 1px solid #e1e5e8;
+      border-radius: 22px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 14px 44px rgba(20,25,30,.10);
+    }
+    .icon {
+      width: 116px;
+      height: 116px;
+      border-radius: 25px;
+      display: block;
+      margin: 0 auto 18px;
+    }
+    h1 {
+      margin: 0 0 9px;
+      font-size: 25px;
+      line-height: 1.15;
+    }
+    p {
+      margin: 0 0 18px;
+      color: #6f767c;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .buttons {
+      display: grid;
+      gap: 10px;
+    }
+    button, a.button {
+      width: 100%;
+      border: 0;
+      border-radius: 13px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      display: block;
+    }
+    #installButton {
+      background: #118452;
+      color: #fff;
+      display: none;
+    }
+    .open {
+      background: #f58220;
+      color: #fff;
+    }
+    .hint {
+      margin-top: 16px;
+      padding: 12px 13px;
+      border-radius: 12px;
+      background: #f7f8f9;
+      color: #686f75;
+      font-size: 12px;
+      line-height: 1.45;
+      text-align: left;
+    }
+    .status {
+      min-height: 18px;
+      margin-top: 10px;
+      color: #777;
+      font-size: 11px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <img class="icon" src="./icon-192.png" alt="">
+    <h1>Регионы Румедиа</h1>
+    <p>
+      Установите приложение на Samsung, чтобы на рабочем столе был собственный значок
+      без маленького значка Chrome или Яндекс Браузера.
+    </p>
+
+    <div class="buttons">
+      <button id="installButton" type="button">Установить приложение</button>
+      <a class="button open" href="https://script.google.com/macros/s/AKfycbyHVQJJhuI26fzBS0yJeV7aJOz67eGpiWsRjHfq0D17AjC0hC7XHF1-oU63kZX0Mj8/exec">Открыть сейчас</a>
+    </div>
+
+    <div class="hint" id="hint">
+      <b>Samsung Internet:</b> откройте меню браузера и выберите установку веб-приложения
+      / «Добавить на экран приложений».<br><br>
+      <b>Chrome:</b> меню ⋮ → «Установить приложение». Выбирайте именно
+      <b>«Установить приложение»</b>, а не обычное «Создать ярлык».
+    </div>
+
+    <div class="status" id="status"></div>
+  </main>
+
+  <script>
+    const APP_URL = "https://script.google.com/macros/s/AKfycbyHVQJJhuI26fzBS0yJeV7aJOz67eGpiWsRjHfq0D17AjC0hC7XHF1-oU63kZX0Mj8/exec";
+    const installButton = document.getElementById('installButton');
+    const statusEl = document.getElementById('status');
+    let deferredPrompt = null;
+
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    // Когда пользователь запускает уже установленную PWA с рабочего стола,
+    // сразу открываем рабочее Google Apps Script приложение.
+    if (isStandalone && !new URLSearchParams(location.search).has('stay')) {
+      statusEl.textContent = 'Открываю приложение…';
+      setTimeout(() => window.location.replace(APP_URL), 250);
+    }
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredPrompt = event;
+      installButton.style.display = 'block';
+    });
+
+    installButton.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installButton.style.display = 'none';
+      if (choice && choice.outcome === 'accepted') {
+        statusEl.textContent = 'Приложение установлено. Откройте его с рабочего стола.';
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      statusEl.textContent = 'Готово. Приложение установлено.';
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
