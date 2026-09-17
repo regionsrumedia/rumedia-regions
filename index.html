@@ -199,7 +199,7 @@
       <div>«Регионы Румедиа» можно установить на телефон</div>
       <div id="install-hint"></div>
     </div>
-    <button id="install-button" type="button">Установить</button>
+    <button id="install-button" type="button">Установить приложение</button>
     <button id="install-close" type="button" aria-label="Закрыть">×</button>
   </div>
 
@@ -223,52 +223,52 @@
 
     let deferredInstallPrompt = null;
 
+    const isMobileDevice =
+      (navigator.userAgentData && navigator.userAgentData.mobile === true) ||
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     function isStandalone() {
       return window.matchMedia('(display-mode: standalone)').matches ||
              window.navigator.standalone === true;
     }
 
-    function showInstallBanner() {
-      if (isStandalone()) return;
-      if (sessionStorage.getItem('rumedia-install-dismissed') === '1') return;
-      installBanner.classList.add('show');
+    function hideInstallBanner() {
+      installBanner.classList.remove('show');
     }
 
     window.addEventListener('beforeinstallprompt', event => {
+      if (!isMobileDevice || isStandalone()) return;
+
       event.preventDefault();
       deferredInstallPrompt = event;
-      showInstallBanner();
+      installHint.style.display = 'none';
+      installButton.textContent = 'Установить приложение';
+      installBanner.classList.add('show');
     });
 
     window.addEventListener('appinstalled', () => {
       deferredInstallPrompt = null;
-      installBanner.classList.remove('show');
+      hideInstallBanner();
     });
 
     installButton.addEventListener('click', async () => {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        try {
-          await deferredInstallPrompt.userChoice;
-        } catch (_) {}
-        deferredInstallPrompt = null;
-        installBanner.classList.remove('show');
-        return;
-      }
+      if (!deferredInstallPrompt) return;
 
-      installHint.textContent =
-        'Откройте меню браузера → «Установить приложение» или «Добавить на главный экран».';
-      installHint.style.display = 'block';
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+
+      promptEvent.prompt();
+
+      try {
+        await promptEvent.userChoice;
+      } catch (_) {}
+
+      hideInstallBanner();
     });
 
     installClose.addEventListener('click', () => {
-      installBanner.classList.remove('show');
-      sessionStorage.setItem('rumedia-install-dismissed', '1');
+      hideInstallBanner();
     });
-
-    // Если браузер не отдаст beforeinstallprompt, всё равно показываем
-    // понятную кнопку с ручной инструкцией после загрузки страницы.
-    setTimeout(showInstallBanner, 2500);
 
     let frameLoaded = false;
     let revealStarted = false;
