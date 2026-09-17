@@ -1,26 +1,23 @@
-const CACHE_NAME = "rumedia-regions-v2";
+const CACHE_NAME = 'rumedia-pwa-v2';
 
-const FILES_TO_CACHE = [
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./icon-maskable-192.png",
-  "./icon-maskable-512.png",
-  "./apple-touch-icon.png"
+const APP_SHELL = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './logo-rumedia.png',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png'
 ];
 
-self.addEventListener("install", event => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(FILES_TO_CACHE))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
   );
-
   self.skipWaiting();
 });
 
-
-self.addEventListener("activate", event => {
+self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
@@ -30,56 +27,25 @@ self.addEventListener("activate", event => {
       )
     )
   );
-
   self.clients.claim();
 });
 
-
-self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") {
-    return;
-  }
-
+self.addEventListener('fetch', event => {
   const request = event.request;
+  const url = new URL(request.url);
 
-  /*
-    Для открытия самого приложения сначала пытаемся
-    получить свежий index.html из сети.
-
-    Если интернета нет — используем сохранённую копию.
-  */
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(cache => cache.put("./index.html", copy));
-
-          return response;
-        })
-        .catch(() =>
-          caches.match("./index.html")
-        )
-    );
-
+  // Не вмешиваемся в загрузку внешнего iframe Google Apps Script.
+  if (url.origin !== self.location.origin || request.method !== 'GET') {
     return;
   }
 
-
-  /*
-    Иконки, manifest и остальные локальные файлы:
-    сначала берём из кэша, при отсутствии — из сети.
-  */
   event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        return fetch(request);
+    fetch(request)
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        return response;
       })
+      .catch(() => caches.match(request).then(cached => cached || caches.match('./index.html')))
   );
 });
