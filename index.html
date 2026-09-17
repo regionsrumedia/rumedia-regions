@@ -145,15 +145,13 @@
     const bar = document.getElementById('progress-bar');
     const label = document.getElementById('progress-label');
 
-    let finished = false;
-    const startedAt = performance.now();
+    let frameLoaded = false;
+    let revealStarted = false;
+    let loadAt = null;
 
-    /*
-      Расчётная длительность загрузки — около 10 секунд.
-      До фактической готовности iframe шкала доходит максимум до 92%.
-      100% показывается только после события load.
-    */
-    const expectedLoadMs = 12000;
+    const startedAt = performance.now();
+    const preLoadDurationMs = 12000;
+    const postLoadHoldMs = 5500;
 
     function setProgress(value) {
       const safeValue = Math.max(0, Math.min(100, value));
@@ -161,63 +159,98 @@
       label.textContent = Math.round(safeValue) + '%';
     }
 
+    /*
+      До события load прогресс плавно идёт примерно до 92%.
+      После load он не замирает, а продолжает двигаться до 99%
+      в течение времени, пока Google Apps Script визуально дорисовывается.
+    */
     const progressTimer = setInterval(() => {
-      if (finished) return;
+      const now = performance.now();
+      let value;
 
-      const elapsed = performance.now() - startedAt;
-      const calculated = (elapsed / expectedLoadMs) * 92;
+      if (!frameLoaded) {
+        const elapsed = now - startedAt;
 
-      setProgress(Math.min(92, calculated));
-    }, 120);
+        if (elapsed <= preLoadDurationMs) {
+          value = (elapsed / preLoadDurationMs) * 92;
+        } else {
+          /*
+            Если сеть медленная, после 92% продолжаем очень медленно
+            ползти к 96%, а не замираем на одной цифре.
+          */
+          const extra = elapsed - preLoadDurationMs;
+          value = 92 + Math.min(4, (extra / 18000) * 4);
+        }
+      } else {
+        const elapsedAfterLoad = now - loadAt;
+        const startValue = Math.max(
+          0,
+          Math.min(
+            96,
+            ((loadAt - startedAt) / preLoadDurationMs) * 92
+          )
+        );
 
-    function finishLoading() {
-      if (finished) return;
-      finished = true;
+        value = startValue +
+          (99 - startValue) *
+          Math.min(1, elapsedAfterLoad / postLoadHoldMs);
+      }
+
+      setProgress(Math.min(99, value));
+    }, 100);
+
+    function revealApp() {
+      if (revealStarted) return;
+      revealStarted = true;
+
+      clearInterval(progressTimer);
+      setProgress(100);
 
       /*
-        iframe Google Apps Script может прислать load раньше,
-        чем интерфейс реально появился на экране.
-        Поэтому держим заставку минимум 12 секунд от начала запуска.
-        Это заменяет пустой экран понятным прогрессом.
+        Сначала делаем iframe видимым под непрозрачной заставкой,
+        затем даём браузеру ещё немного времени на финальную отрисовку.
       */
-      const minSplashMs = 12000;
-      const elapsed = performance.now() - startedAt;
-      const waitMore = Math.max(0, minSplashMs - elapsed);
+      frame.classList.add('ready');
 
-      setTimeout(() => {
-        clearInterval(progressTimer);
-        setProgress(100);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            loader.classList.add('hidden');
 
-        setTimeout(() => {
-          frame.classList.add('ready');
-
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              /*
-                Google Apps Script иногда визуально дорисовывается
-                примерно через 2 секунды после load.
-                Оставляем splash поверх iframe ещё на 3 секунды.
-              */
-              setTimeout(() => {
-                loader.classList.add('hidden');
-
-                setTimeout(() => {
-                  loader.style.display = 'none';
-                }, 350);
-              }, 3000);
-            });
-          });
-        }, 550);
-      }, waitMore);
+            setTimeout(() => {
+              loader.style.display = 'none';
+            }, 350);
+          }, 300);
+        });
+      });
     }
 
-    frame.addEventListener('load', finishLoading);
+    function handleFrameLoad() {
+      if (frameLoaded) return;
+
+      frameLoaded = true;
+      loadAt = performance.now();
+
+      /*
+        На мобильных Google Apps Script может прислать load раньше,
+        чем интерфейс визуально готов. Держим splash ещё 5,5 секунды.
+      */
+      setTimeout(revealApp, postLoadHoldMs);
+    }
+
+    frame.addEventListener('load', handleFrameLoad);
 
     /*
-      Страховка от вечной заставки при проблемах с Google Apps Script.
-      Через 30 секунд приложение всё равно будет показано.
+      Страховка: если load не придёт, через 30 секунд всё равно
+      завершаем заставку, чтобы пользователь не остался на ней навсегда.
     */
-    setTimeout(finishLoading, 30000);
+    setTimeout(() => {
+      if (!frameLoaded) {
+        frameLoaded = true;
+        loadAt = performance.now();
+        setTimeout(revealApp, 1200);
+      }
+    }, 30000);
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
