@@ -6,6 +6,9 @@
 
   <meta name="theme-color" content="#f4f5f6">
   <meta name="application-name" content="Регионы Румедиа">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Регионы Румедиа">
 
   <title>Регионы Румедиа</title>
 
@@ -14,336 +17,210 @@
   <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com">
+  <link rel="dns-prefetch" href="//script.google.com">
+  <link rel="dns-prefetch" href="//script.googleusercontent.com">
 
   <style>
-
     html, body {
-      margin:0;
-      width:100%;
-      height:100%;
-      overflow:hidden;
-      background:#f4f5f6;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f4f5f6;
     }
-
 
     #app {
-      position:fixed;
-      inset:0;
-      width:100%;
-      height:100%;
-      border:0;
-      background:#f4f5f6;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #f4f5f6;
+      opacity: 0;
+      transition: opacity .18s ease;
     }
 
+    #app.ready {
+      opacity: 1;
+    }
 
     #loader {
-
-      position:fixed;
-      inset:0;
-      z-index:10;
-
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-
-      gap:18px;
-
-      background:#f4f5f6;
-
-      color:#5f666c;
-
-      font:600 14px/1.4 Arial,Helvetica,sans-serif;
-
-      transition:opacity .35s ease, visibility .35s ease;
-
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #f4f5f6;
+      color: #5f666c;
+      font: 600 14px/1.4 Arial, Helvetica, sans-serif;
+      transition: opacity .30s ease, visibility .30s ease;
     }
-
 
     #loader.hidden {
-
-      opacity:0;
-      visibility:hidden;
-      pointer-events:none;
-
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
-
 
     .splash-logo {
-
-      width:min(55vw,260px);
-      height:auto;
-
-      display:block;
-
+      width: min(68vw, 320px);
+      height: auto;
+      display: block;
+      object-fit: contain;
     }
-
 
     .loading-text {
-
-      opacity:.75;
-      text-align:center;
-      padding:0 20px;
-
+      opacity: .78;
+      text-align: center;
+      padding: 0 20px;
     }
 
+    .progress-wrap {
+      width: min(70vw, 280px);
+    }
 
     .progress {
-
-      width:min(70vw,280px);
-      height:7px;
-
-      background:rgba(0,0,0,.08);
-
-      border-radius:20px;
-
-      overflow:hidden;
-
-      margin-top:5px;
-
+      width: 100%;
+      height: 7px;
+      background: rgba(0, 0, 0, .08);
+      border-radius: 20px;
+      overflow: hidden;
     }
-
 
     #progress-bar {
-
-      width:0%;
-
-      height:100%;
-
-      background:#f58220;
-
-      transition:width .35s ease;
-
+      width: 0%;
+      height: 100%;
+      background: #f58220;
+      border-radius: 20px;
+      transition: width .18s linear;
     }
 
-
-    .loading-dots {
-
-      display:flex;
-      gap:5px;
-
+    #progress-label {
+      margin-top: 7px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      opacity: .62;
     }
-
-
-    .loading-dots i {
-
-      width:6px;
-      height:6px;
-
-      border-radius:50%;
-
-      background:#f58220;
-
-      animation:pulse 1s infinite ease-in-out;
-
-    }
-
-
-    .loading-dots i:nth-child(2){
-      animation-delay:.16s;
-    }
-
-    .loading-dots i:nth-child(3){
-      animation-delay:.32s;
-    }
-
-
-    @keyframes pulse {
-
-      0%,80%,100% {
-        opacity:.3;
-        transform:scale(.85);
-      }
-
-      40% {
-        opacity:1;
-        transform:scale(1);
-      }
-
-    }
-
   </style>
-
 </head>
-
 
 <body>
 
+  <div id="loader" aria-live="polite">
+    <img
+      class="splash-logo"
+      src="./logo-rumedia.png"
+      alt="Румедиа"
+    >
 
-<div id="loader">
+    <div class="loading-text">
+      Открываю «Регионы Румедиа»…
+    </div>
 
-
-  <img 
-    class="splash-logo"
-    src="./logo-rumedia.png"
-    alt="Румедиа"
-  >
-
-
-  <div class="loading-text">
-    Открываю «Регионы Румедиа»…
+    <div class="progress-wrap">
+      <div class="progress" aria-hidden="true">
+        <div id="progress-bar"></div>
+      </div>
+      <div id="progress-label">0%</div>
+    </div>
   </div>
 
-
-  <div class="progress">
-    <div id="progress-bar"></div>
-  </div>
-
-
-  <div class="loading-dots">
-    <i></i>
-    <i></i>
-    <i></i>
-  </div>
-
-
-</div>
-
-
-
-<iframe
-
-  id="app"
-
-  title="Регионы Румедиа"
-
-  src="https://script.google.com/macros/s/AKfycbyHVQJJhuI26fzBS0yJeV7aJOz67eGpiWsRjHfq0D17AjC0hC7XHF1-oU63kZX0Mj8/exec"
-
-  allow="clipboard-read; clipboard-write"
-
-  loading="eager"
-
-></iframe>
-
-
-
-<script>
-
-
-const frame = document.getElementById('app');
-
-const loader = document.getElementById('loader');
-
-const bar = document.getElementById('progress-bar');
-
-
-let progress = 0;
-
-let finished = false;
-
-
-
-// плавная загрузка до 90%
-
-const timer = setInterval(()=>{
-
-
-  if(progress < 90){
-
-    progress += Math.random()*4;
-
-    if(progress>90) progress=90;
-
-    bar.style.width = progress + "%";
-
-  }
-
-
-},350);
-
-
-
-
-
-function hideLoader(){
-
-
-  if(finished) return;
-
-
-  finished=true;
-
-
-  clearInterval(timer);
-
-
-  bar.style.width="100%";
-
-
-  setTimeout(()=>{
-
-
-    loader.classList.add('hidden');
-
-
-    setTimeout(()=>{
-
-      loader.style.display="none";
-
-    },400);
-
-
-
-  },300);
-
-
-
-}
-
-
-
-
-
-frame.addEventListener('load',()=>{
-
-
-  hideLoader();
-
-
-});
-
-
-
-
-
-// защита от зависания
-
-setTimeout(()=>{
-
-
-  hideLoader();
-
-
-},30000);
-
-
-
-
-
-if('serviceWorker' in navigator){
-
-
-window.addEventListener('load',()=>{
-
-
-navigator.serviceWorker
-
-.register('./sw.js',{scope:'./'})
-
-.then(reg=>reg.update())
-
-.catch(()=>{});
-
-
-});
-
-
-}
-
-
-</script>
-
+  <iframe
+    id="app"
+    title="Регионы Румедиа"
+    src="https://script.google.com/macros/s/AKfycbyHVQJJhuI26fzBS0yJeV7aJOz67eGpiWsRjHfq0D17AjC0hC7XHF1-oU63kZX0Mj8/exec"
+    allow="clipboard-read; clipboard-write"
+    loading="eager"
+  ></iframe>
+
+  <script>
+    const frame = document.getElementById('app');
+    const loader = document.getElementById('loader');
+    const bar = document.getElementById('progress-bar');
+    const label = document.getElementById('progress-label');
+
+    let finished = false;
+    const startedAt = performance.now();
+
+    /*
+      Расчётная длительность загрузки — около 10 секунд.
+      До фактической готовности iframe шкала доходит максимум до 92%.
+      100% показывается только после события load.
+    */
+    const expectedLoadMs = 10000;
+
+    function setProgress(value) {
+      const safeValue = Math.max(0, Math.min(100, value));
+      bar.style.width = safeValue + '%';
+      label.textContent = Math.round(safeValue) + '%';
+    }
+
+    const progressTimer = setInterval(() => {
+      if (finished) return;
+
+      const elapsed = performance.now() - startedAt;
+      const calculated = (elapsed / expectedLoadMs) * 92;
+
+      setProgress(Math.min(92, calculated));
+    }, 120);
+
+    function finishLoading() {
+      if (finished) return;
+      finished = true;
+
+      clearInterval(progressTimer);
+      setProgress(100);
+
+      /*
+        Держим заставку поверх iframe ещё немного:
+        Google Apps Script иногда отдаёт load раньше,
+        чем страница визуально успевает полностью отрисоваться.
+      */
+      setTimeout(() => {
+        frame.classList.add('ready');
+
+        /*
+          iframe уже видим под непрозрачной заставкой.
+          Даём браузеру время отрисовать его и только затем
+          плавно убираем splash — это предотвращает белую вспышку.
+        */
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              loader.classList.add('hidden');
+
+              setTimeout(() => {
+                loader.style.display = 'none';
+              }, 350);
+            }, 180);
+          });
+        });
+      }, 1200);
+    }
+
+    frame.addEventListener('load', finishLoading);
+
+    /*
+      Страховка от вечной заставки при проблемах с Google Apps Script.
+      Через 30 секунд приложение всё равно будет показано.
+    */
+    setTimeout(finishLoading, 30000);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('./sw.js', { scope: './' })
+          .then(registration => registration.update())
+          .catch(() => {});
+      });
+    }
+  </script>
 
 </body>
-
 </html>
