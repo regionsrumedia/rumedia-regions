@@ -153,7 +153,7 @@
       До фактической готовности iframe шкала доходит максимум до 92%.
       100% показывается только после события load.
     */
-    const expectedLoadMs = 10000;
+    const expectedLoadMs = 12000;
 
     function setProgress(value) {
       const safeValue = Math.max(0, Math.min(100, value));
@@ -175,33 +175,36 @@
       finished = true;
 
       clearInterval(progressTimer);
-      setProgress(100);
 
       /*
-        Держим заставку поверх iframe ещё немного:
-        Google Apps Script иногда отдаёт load раньше,
-        чем страница визуально успевает полностью отрисоваться.
+        iframe Google Apps Script может прислать load раньше,
+        чем интерфейс реально появился на экране.
+        Поэтому держим заставку минимум 12 секунд от начала запуска.
+        Это заменяет пустой экран понятным прогрессом.
       */
+      const minSplashMs = 12000;
+      const elapsed = performance.now() - startedAt;
+      const waitMore = Math.max(0, minSplashMs - elapsed);
+
       setTimeout(() => {
-        frame.classList.add('ready');
+        setProgress(100);
 
-        /*
-          iframe уже видим под непрозрачной заставкой.
-          Даём браузеру время отрисовать его и только затем
-          плавно убираем splash — это предотвращает белую вспышку.
-        */
-        requestAnimationFrame(() => {
+        setTimeout(() => {
+          frame.classList.add('ready');
+
           requestAnimationFrame(() => {
-            setTimeout(() => {
-              loader.classList.add('hidden');
-
+            requestAnimationFrame(() => {
               setTimeout(() => {
-                loader.style.display = 'none';
-              }, 350);
-            }, 180);
+                loader.classList.add('hidden');
+
+                setTimeout(() => {
+                  loader.style.display = 'none';
+                }, 350);
+              }, 250);
+            });
           });
-        });
-      }, 1200);
+        }, 550);
+      }, waitMore);
     }
 
     frame.addEventListener('load', finishLoading);
