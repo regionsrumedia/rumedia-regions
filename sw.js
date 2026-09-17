@@ -1,14 +1,13 @@
-const CACHE_NAME = "rumedia-regions-v1";
+const CACHE_NAME = "rumedia-regions-v2";
 
 const FILES_TO_CACHE = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/icon-maskable-192.png",
-  "/icon-maskable-512.png",
-  "/apple-touch-icon.png"
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-192.png",
+  "./icon-maskable-512.png",
+  "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", event => {
@@ -37,8 +36,50 @@ self.addEventListener("activate", event => {
 
 
 self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET") {
+    return;
+  }
+
+  const request = event.request;
+
+  /*
+    Для открытия самого приложения сначала пытаемся
+    получить свежий index.html из сети.
+
+    Если интернета нет — используем сохранённую копию.
+  */
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          const copy = response.clone();
+
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put("./index.html", copy));
+
+          return response;
+        })
+        .catch(() =>
+          caches.match("./index.html")
+        )
+    );
+
+    return;
+  }
+
+
+  /*
+    Иконки, manifest и остальные локальные файлы:
+    сначала берём из кэша, при отсутствии — из сети.
+  */
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
+    caches.match(request)
+      .then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return fetch(request);
+      })
   );
 });
