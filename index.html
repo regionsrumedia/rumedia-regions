@@ -194,13 +194,18 @@
 
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
+              /*
+                Google Apps Script иногда визуально дорисовывается
+                примерно через 2 секунды после load.
+                Оставляем splash поверх iframe ещё на 3 секунды.
+              */
               setTimeout(() => {
                 loader.classList.add('hidden');
 
                 setTimeout(() => {
                   loader.style.display = 'none';
                 }, 350);
-              }, 250);
+              }, 3000);
             });
           });
         }, 550);
