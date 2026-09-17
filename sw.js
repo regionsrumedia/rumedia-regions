@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rumedia-pwa-v2';
+const CACHE_NAME = 'rumedia-pwa-v3';
 
 const APP_SHELL = [
   './',
