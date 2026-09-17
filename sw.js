@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rumedia-pwa-v7';
+const CACHE_NAME = 'rumedia-pwa-v8';
 
 const APP_SHELL = [
   './',
@@ -7,7 +7,9 @@ const APP_SHELL = [
   './logo-rumedia.png',
   './icon-192.png',
   './icon-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './icon-maskable-192.png',
+  './icon-maskable-512.png'
 ];
 
 self.addEventListener('install', event => {

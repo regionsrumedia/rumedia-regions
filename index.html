@@ -103,6 +103,72 @@
     #progress-label {
       display: none;
     }
+  
+    #install-banner {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 30;
+      width: min(92vw, 430px);
+      box-sizing: border-box;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(0,0,0,.10);
+      border-radius: 16px;
+      background: rgba(255,255,255,.97);
+      box-shadow: 0 10px 30px rgba(0,0,0,.16);
+      font: 600 14px/1.3 Arial, Helvetica, sans-serif;
+      color: #222;
+    }
+
+    #install-banner.show {
+      display: flex;
+    }
+
+    #install-copy {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #install-hint {
+      display: none;
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+    }
+
+    #install-button {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 14px;
+      background: #f58220;
+      color: #fff;
+      font: 700 14px/1 Arial, Helvetica, sans-serif;
+      cursor: pointer;
+    }
+
+    #install-close {
+      flex: 0 0 auto;
+      border: 0;
+      background: transparent;
+      color: #777;
+      font-size: 22px;
+      line-height: 1;
+      padding: 4px;
+      cursor: pointer;
+    }
+
+    @media (display-mode: standalone) {
+      #install-banner {
+        display: none !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -127,6 +193,16 @@
     </div>
   </div>
 
+
+  <div id="install-banner" role="region" aria-label="Установка приложения">
+    <div id="install-copy">
+      <div>«Регионы Румедиа» можно установить на телефон</div>
+      <div id="install-hint"></div>
+    </div>
+    <button id="install-button" type="button">Установить</button>
+    <button id="install-close" type="button" aria-label="Закрыть">×</button>
+  </div>
+
   <iframe
     id="app"
     title="Регионы Румедиа"
@@ -140,6 +216,59 @@
     const loader = document.getElementById('loader');
     const bar = document.getElementById('progress-bar');
     const label = document.getElementById('progress-label');
+    const installBanner = document.getElementById('install-banner');
+    const installButton = document.getElementById('install-button');
+    const installClose = document.getElementById('install-close');
+    const installHint = document.getElementById('install-hint');
+
+    let deferredInstallPrompt = null;
+
+    function isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true;
+    }
+
+    function showInstallBanner() {
+      if (isStandalone()) return;
+      if (sessionStorage.getItem('rumedia-install-dismissed') === '1') return;
+      installBanner.classList.add('show');
+    }
+
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      showInstallBanner();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      installBanner.classList.remove('show');
+    });
+
+    installButton.addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        try {
+          await deferredInstallPrompt.userChoice;
+        } catch (_) {}
+        deferredInstallPrompt = null;
+        installBanner.classList.remove('show');
+        return;
+      }
+
+      installHint.textContent =
+        'Откройте меню браузера → «Установить приложение» или «Добавить на главный экран».';
+      installHint.style.display = 'block';
+    });
+
+    installClose.addEventListener('click', () => {
+      installBanner.classList.remove('show');
+      sessionStorage.setItem('rumedia-install-dismissed', '1');
+    });
+
+    // Если браузер не отдаст beforeinstallprompt, всё равно показываем
+    // понятную кнопку с ручной инструкцией после загрузки страницы.
+    setTimeout(showInstallBanner, 2500);
 
     let frameLoaded = false;
     let revealStarted = false;
