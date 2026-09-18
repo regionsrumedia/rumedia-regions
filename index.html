@@ -54,11 +54,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
       background: #f4f5f6;
-      color: #5f666c;
-      font: 600 14px/1.4 Arial, Helvetica, sans-serif;
-      transition: opacity .30s ease, visibility .30s ease;
+      color: #17191c;
+      font-family: Arial, Helvetica, sans-serif;
+      transition: opacity .24s ease, visibility .24s ease;
     }
 
     #loader.hidden {
@@ -67,26 +66,56 @@
       pointer-events: none;
     }
 
-    .splash-logo {
-      width: min(68vw, 320px);
-      height: auto;
-      display: block;
-      object-fit: contain;
+    .splash-mark {
+      width: min(78vw, 360px);
+      text-align: left;
     }
 
-    .loading-text {
-      opacity: .78;
-      text-align: center;
-      padding: 0 20px;
+    .splash-kicker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: #73787d;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .splash-kicker::before {
+      content: '';
+      width: 24px;
+      height: 4px;
+      border-radius: 999px;
+      background: #f58220;
+    }
+
+    .splash-title {
+      margin: 0;
+      font-size: clamp(34px, 10vw, 54px);
+      line-height: .98;
+      font-weight: 900;
+      letter-spacing: -.045em;
+    }
+
+    .splash-subtitle {
+      margin-top: 12px;
+      color: #6f757a;
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 600;
     }
 
     .progress-wrap {
-      width: min(70vw, 280px);
+      width: min(78vw, 360px);
+      margin-top: 30px;
     }
 
     .progress {
       width: 100%;
-      height: 7px;
+      height: 4px;
       background: rgba(0, 0, 0, .08);
       border-radius: 20px;
       overflow: hidden;
@@ -247,14 +276,10 @@
 <body>
 
   <div id="loader" aria-live="polite">
-    <img
-      class="splash-logo"
-      src="./logo-rumedia.png"
-      alt="Румедиа"
-    >
-
-    <div class="loading-text">
-      Открываю «Регионы Румедиа»…
+    <div class="splash-mark">
+      <div class="splash-kicker">Румедиа</div>
+      <h1 class="splash-title">Регионы<br>вещания</h1>
+      <div class="splash-subtitle">Business FM · Радио Шоколад</div>
     </div>
 
     <div class="progress-wrap">
@@ -495,12 +520,12 @@
     detectInstalledPwa();
 
     let frameLoaded = false;
+    let appReadyMessage = false;
     let revealStarted = false;
     let loadAt = null;
 
     const startedAt = performance.now();
-    const preLoadDurationMs = 12000;
-    const postLoadHoldMs = 5500;
+    const preLoadDurationMs = 9000;
 
     function setProgress(value) {
       const safeValue = Math.max(0, Math.min(100, value));
@@ -509,43 +534,21 @@
     }
 
     /*
-      До события load прогресс плавно идёт примерно до 92%.
-      После load он не замирает, а продолжает двигаться до 99%
-      в течение времени, пока Google Apps Script визуально дорисовывается.
+      До готовности приложения индикатор спокойно доходит до 94–97%.
+      Сам iframe не показываем, пока страница внутри не сообщит, что интерфейс
+      действительно отрисован. Это убирает белый промежуточный экран.
     */
     const progressTimer = setInterval(() => {
-      const now = performance.now();
+      const elapsed = performance.now() - startedAt;
       let value;
 
-      if (!frameLoaded) {
-        const elapsed = now - startedAt;
-
-        if (elapsed <= preLoadDurationMs) {
-          value = (elapsed / preLoadDurationMs) * 92;
-        } else {
-          /*
-            Если сеть медленная, после 92% продолжаем очень медленно
-            ползти к 96%, а не замираем на одной цифре.
-          */
-          const extra = elapsed - preLoadDurationMs;
-          value = 92 + Math.min(4, (extra / 18000) * 4);
-        }
+      if (elapsed <= preLoadDurationMs) {
+        value = (elapsed / preLoadDurationMs) * 94;
       } else {
-        const elapsedAfterLoad = now - loadAt;
-        const startValue = Math.max(
-          0,
-          Math.min(
-            96,
-            ((loadAt - startedAt) / preLoadDurationMs) * 92
-          )
-        );
-
-        value = startValue +
-          (99 - startValue) *
-          Math.min(1, elapsedAfterLoad / postLoadHoldMs);
+        value = 94 + Math.min(3, ((elapsed - preLoadDurationMs) / 15000) * 3);
       }
 
-      setProgress(Math.min(99, value));
+      setProgress(Math.min(97, value));
     }, 100);
 
     function revealApp() {
@@ -554,11 +557,6 @@
 
       clearInterval(progressTimer);
       setProgress(100);
-
-      /*
-        Сначала делаем iframe видимым под непрозрачной заставкой,
-        затем даём браузеру ещё немного времени на финальную отрисовку.
-      */
       frame.classList.add('ready');
 
       requestAnimationFrame(() => {
@@ -570,38 +568,45 @@
               loader.style.display = 'none';
               appVisible = true;
               scheduleInstallUi();
-            }, 350);
-          }, 300);
+            }, 260);
+          }, 120);
         });
       });
     }
 
     function handleFrameLoad() {
       if (frameLoaded) return;
-
       frameLoaded = true;
       loadAt = performance.now();
 
       /*
-        На мобильных Google Apps Script может прислать load раньше,
-        чем интерфейс визуально готов. Держим splash ещё 5,5 секунды.
+        Для старой версии страницы без postMessage оставляем страховку:
+        после load держим заставку дольше, чем раньше, чтобы не показать
+        пустой белый документ Google Apps Script.
       */
-      setTimeout(revealApp, postLoadHoldMs);
+      setTimeout(() => {
+        if (!appReadyMessage) revealApp();
+      }, 11000);
     }
 
     frame.addEventListener('load', handleFrameLoad);
 
+    window.addEventListener('message', event => {
+      if (event.source !== frame.contentWindow) return;
+      const data = event.data;
+      if (!data || data.type !== 'rumedia-app-ready') return;
+
+      appReadyMessage = true;
+      revealApp();
+    });
+
     /*
-      Страховка: если load не придёт, через 30 секунд всё равно
-      завершаем заставку, чтобы пользователь не остался на ней навсегда.
+      Крайняя страховка на случай сетевой ошибки: не держим пользователя
+      на заставке бесконечно.
     */
     setTimeout(() => {
-      if (!frameLoaded) {
-        frameLoaded = true;
-        loadAt = performance.now();
-        setTimeout(revealApp, 1200);
-      }
-    }, 30000);
+      if (!revealStarted) revealApp();
+    }, 32000);
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

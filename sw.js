@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rumedia-pwa-v10';
+const CACHE_NAME = 'rumedia-pwa-v10-mobilefix';
 
 const APP_SHELL = [
   './',
